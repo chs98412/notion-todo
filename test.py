@@ -1,44 +1,13 @@
 import requests, json
 from json.decoder import JSONDecoder
+import notion
+from notion.client import NotionClient
+from notion.block import *
+from notion.collection import *
 def readDatabase(pageId, headers):
     
     readUrl = f"https://api.notion.com/v1/databases/"
-    data={}
-    data["parent"]={
-        "type": "page_id",
-        "page_id": "6f310e7e07a445b292c5635ed77b9984"
-    }
-    data["icon"]={
-    	"type": "emoji",
-			"emoji": "📝"
-  	}
-    data["cover"]={
-  		"type": "external",
-    	"external": {
-    		"url": "https://website.domain/images/image.png"
-    	}
-  	}
-    data["is_inline"]=True
-    data["title"]=[]
-    data["title"].append({
-            "type": "text",
-            "text": {
-                "content": "Grocery List",
-                "link": None
-            }
-        })
-    data["properties"]={
-        "Name": {
-            "title": {}
-        },
-        "Description": {
-            "rich_text": {}
-        },
-        "In stock": {
-            "checkbox": {}
-        }
-    }
-    print(data)
+
     
     postdata='''
     {
@@ -57,21 +26,62 @@ def readDatabase(pageId, headers):
         {
             "type": "text",
             "text": {
-                "content": "Grocery List",
+                "content": "Issues",
                 "link": null
             }
         }
     ],
     "properties": {
-        "Name": {
+        "Title": {
             "title": {}
         },
         "Description": {
-            "rich_text": {}
+            "select": {
+                "options": [
+      {
+        "name": "Close",
+        "color": "red"
+      },
+      {
+        "name": "Open",
+        "color": "green"
+      }
+    ]
+            }
         },
-        "In stock": {
+    "Issue Number": {
             "checkbox": {}
-        }
+    },
+    "Closed At": {
+            "checkbox": {}
+    },
+    "Related Github Creator": {
+            "checkbox": {}
+    },
+    "Issue Number": {
+            "checkbox": {}
+    },
+    "Created At": {
+            "checkbox": {}
+    },
+    "Assignees": {
+            "checkbox": {}
+    },
+    "Creator": {
+            "checkbox": {}
+    },
+    "Description": {
+            "checkbox": {}
+    },
+    "Related Github Assignees": {
+            "checkbox": {}
+    },
+    "Updated At": {
+            "checkbox": {}
+    },
+    "check": {
+            "checkbox": {}
+    }
     }
 }
     '''
@@ -94,4 +104,57 @@ headers = {
     "Content-Type":"application/json"
 }
 
-readDatabase(pageId, headers)
+
+
+#readDatabase(pageId, headers)
+
+
+
+def createPage(databaseId, headers, page_values,idx):
+
+    createdUrl = "https://api.notion.com/v1/pages"
+
+    newPageData = {
+        "parent": {"database_id": databaseId},
+        "properties": {
+            "Title": {
+                "title": [
+                    {
+                        "text": {
+                            "content": page_values[idx]
+                        }
+                    }
+                ]
+            }
+        }
+    }
+
+    data = json.dumps(newPageData)
+
+    res = requests.post(createdUrl, headers=headers, data=data)
+
+    print(res.status_code)
+
+
+databaseId = "fe0474733b3940ab8696b567210e6baf"
+
+# page_values = {
+#     'Title': 'Hyuk',
+#     'Assignees': True
+# }
+
+def getissues():
+    headers = {
+    "Authorization": "Bearer " + "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",
+    "Notion-Version": "2022-06-28",
+    "Content-Type":"application/json"
+    }
+    res=requests.get("https://api.github.com/issues", headers=headers)
+    page_values=[]
+    for i in res.json():
+        page_values.append(i["title"])
+    return page_values
+page_values=getissues()
+
+for i in range(len(page_values)):
+    createPage(databaseId, headers, page_values,i)
